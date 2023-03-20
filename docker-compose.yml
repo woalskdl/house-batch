@@ -9,11 +9,8 @@ services:
       MYSQL_USER: 'house'
       MYSQL_PASSWORD: 'house'
       MYSQL_DATABASE: 'house_batch'
-      MYSQL_TCP_PORT: 3307
     ports:
-      - '3307:3307'
-    expose:
-      - 3307
+      - '3307:3306'
     command:
       - 'mysqld'
       - '--character-set-server=utf8mb4'
