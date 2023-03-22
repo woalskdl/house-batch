@@ -20,10 +20,5 @@ public class LawdFieldSetMapper implements FieldSetMapper<Lawd> {
                 .lawdDong(fieldSet.readString(LAWD_DONG))
                 .exist(fieldSet.readBoolean(EXIST, EXIST_TRUE))
                 .build();
-//        Lawd lawd = new Lawd();
-//        lawd.setLawdCd(fieldSet.readString(LAWD_CD));
-//        lawd.setLawdDong(fieldSet.readString(LAWD_DONG));
-//        lawd.setExist(fieldSet.readBoolean(EXIST, EXIST_TRUE));
-//        return lawd;
     }
 }
