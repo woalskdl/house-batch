@@ -14,6 +14,8 @@ public class FilePathParameterValidator implements JobParametersValidator {
     @Override
     public void validate(JobParameters parameters) throws JobParametersInvalidException {
 
+        assert parameters != null;
+
         String filePath = parameters.getString(FILE_PATH);
 
         if (!StringUtils.hasText(filePath))
