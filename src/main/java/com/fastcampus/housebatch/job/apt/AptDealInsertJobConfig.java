@@ -2,15 +2,18 @@ package com.fastcampus.housebatch.job.apt;
 
 import com.fastcampus.housebatch.adapter.ApartmentApiResource;
 import com.fastcampus.housebatch.core.dto.AptDealDto;
-import com.fastcampus.housebatch.job.validator.FilePathParameterValidator;
+import com.fastcampus.housebatch.job.validator.LawdCdParameterValidator;
+import com.fastcampus.housebatch.job.validator.YearMonthParameterValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParametersValidator;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.job.CompositeJobParametersValidator;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.xml.StaxEventItemReader;
@@ -18,10 +21,10 @@ import org.springframework.batch.item.xml.builder.StaxEventItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import java.time.YearMonth;
+import java.util.Arrays;
 
 @Configuration
 @RequiredArgsConstructor
@@ -36,9 +39,20 @@ public class AptDealInsertJobConfig {
     public Job aptDealInsertJob(Step aptDealInsertStep) {
         return jobBuilderFactory.get("aptDealInsertJob")
                 .incrementer(new RunIdIncrementer())
-//                .validator(new FilePathParameterValidator())
+                .validator(aptDealJobParameterValidator())
                 .start(aptDealInsertStep)
                 .build();
+    }
+
+    private JobParametersValidator aptDealJobParameterValidator() {
+        CompositeJobParametersValidator validator = new CompositeJobParametersValidator();
+        // List 로 순서대로 진행됨.
+        validator.setValidators(Arrays.asList(
+                new YearMonthParameterValidator(),
+                new LawdCdParameterValidator()
+        ));
+
+        return validator;
     }
 
     @JobScope
@@ -58,11 +72,13 @@ public class AptDealInsertJobConfig {
     @Bean
     public StaxEventItemReader<AptDealDto> aptDealResourceReader(
 //            @Value("#{jobParameters['filePath']}") String filePath,
+            @Value("#{jobParameters['yearMonth']}") String yearMonth,
+            @Value("#{jobParameters['lawdCd']}") String lawdCd,
             Jaxb2Marshaller aptDealDtoMarshaller
     ) {
         return new StaxEventItemReaderBuilder<AptDealDto>()
                 .name("aptDealResourceReader")
-                .resource(apartmentApiResource.getResource("41135", YearMonth.of(2023, 2)))
+                .resource(apartmentApiResource.getResource(lawdCd, YearMonth.parse(yearMonth)))
                 .addFragmentRootElements("item")                // xml 파일에서 읽을 요소 (실거래 API 응답에서 item 으로 오기 때문)
                 .unmarshaller(aptDealDtoMarshaller)             // 파일 > 객체 매핑
                 .build();
