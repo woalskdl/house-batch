@@ -43,15 +43,19 @@ public class AptDealInsertJobConfig {
     @Bean
     public Job aptDealInsertJob(
             Step guLawdCdStep,
-            Step contextPrintStep,
-            Step aptDealInsertStep
+            Step contextPrintStep
+//            Step aptDealInsertStep
     ) {
         return jobBuilderFactory.get("aptDealInsertJob")
                 .incrementer(new RunIdIncrementer())
                 .validator(aptDealJobParameterValidator())
                 .start(guLawdCdStep)
-                .next(contextPrintStep)
-                .next(aptDealInsertStep)
+                .on("CONTINUABLE").to(contextPrintStep).next(guLawdCdStep)
+                .from(guLawdCdStep)
+                .on("*" ).end()
+                .end()
+//                .next(contextPrintStep)
+//                .next(aptDealInsertStep)
                 .build();
     }
 
@@ -74,6 +78,12 @@ public class AptDealInsertJobConfig {
                 .build();
     }
 
+    /**
+     * ExecutionContext 에 저장할 데이터
+     * 1. guLawdCd      > 구 코드 - 다음 스텝에서 활용할 값
+     * 2. guLawdCdList  > 구 코드 리스트
+     * 3. itemCount     > 남아있는 구 코드의 갯수
+     */
     @StepScope
     @Bean
     public Tasklet guLawdCdTasklet() {
@@ -82,9 +92,31 @@ public class AptDealInsertJobConfig {
             // step to step 전달을 위해
             ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
 
-            List<String> guLawdCds = lawdRepository.findDistinctGuLawdCd();
-            executionContext.putString("guLawdCd", guLawdCds.get(0));
+            // 데이터가 있으면 다음 스텝을 실행하고, 없으면 종료하도록 설정
+            // 데이터가 있으면 > CONTINUALBLE
+            List<String> guLawdCdList;
+            if (!executionContext.containsKey("guLawdCdList")) {
+                guLawdCdList = lawdRepository.findDistinctGuLawdCd();
+                executionContext.put("guLawdCdList", guLawdCdList);
+                executionContext.putInt("itemCount", guLawdCdList.size());
+            } else {
+                guLawdCdList = (List<String>) executionContext.get("guLawdCdList");
+            }
 
+            int itemCount = executionContext.getInt("itemCount");
+
+            if (itemCount == 0) {
+                contribution.setExitStatus(ExitStatus.COMPLETED);
+                return RepeatStatus.FINISHED;
+            }
+
+            itemCount -= 1;
+
+            String guLawdCd = guLawdCdList.get(itemCount);
+            executionContext.putString("guLawdCd", guLawdCd);
+            executionContext.putInt("itemCount", itemCount);
+
+            contribution.setExitStatus(new ExitStatus("CONTINUABLE"));
             return RepeatStatus.FINISHED;
         };
     }
