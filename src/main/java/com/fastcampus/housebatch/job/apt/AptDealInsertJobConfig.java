@@ -73,6 +73,8 @@ public class AptDealInsertJobConfig {
                 .build();
     }
 
+    // 별도의 Step 으로 분리되어 사용되어야 한다. - 상단의 JobScope 내에 현재 코드를 바로 넣어서 사용할 경우 jobExecutionContext의 값이 같은 값으로만 binding 된다.
+    // JobScope 메소드에서 Step 을 실행할 때마다 jobExecutionContext 의 값이 바뀌도록 하려면 현재와 같이 별도 분리 필요
     @StepScope
     @Bean
     public Tasklet contextPrintTasklet(
@@ -81,7 +83,6 @@ public class AptDealInsertJobConfig {
         return ((contribution, chunkContext) -> {
             // executionContext 값을 출력
             System.out.println("[contextPrintTasklet] guLawdCd : " + guLawdCd);
-
             return RepeatStatus.FINISHED;
         });
     }
