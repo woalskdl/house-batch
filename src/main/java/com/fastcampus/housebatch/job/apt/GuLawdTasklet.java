@@ -52,7 +52,6 @@ public class GuLawdTasklet implements Tasklet {
 
     private ExecutionContext getExecutionContext(ChunkContext chunkContext) {
         // chunkContext.getStepContext().getJobExecution() 와 혼동되지 않도록 주의한다. 해당 메소드의 return 값은 unmodifiableMap >> put 할 수 없다.
-
         StepExecution stepExecution = chunkContext.getStepContext().getStepExecution();
         return stepExecution.getJobExecution().getExecutionContext();
     }
