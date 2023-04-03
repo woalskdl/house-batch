@@ -9,6 +9,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 /**
  * 아파트 실거래가 API 응답으로 받은 각각의 거래 정보를 담는 객체
@@ -50,6 +51,10 @@ public class AptDealDto {
 
     @XmlElement(name = "지번")
     private String jibun;
+
+    public String getJibun() {
+        return Optional.ofNullable(jibun).orElse("");
+    }
 
     @XmlElement(name = "지역코드")
     private String regionalCode;
