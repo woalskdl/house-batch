@@ -3,6 +3,7 @@ package com.fastcampus.housebatch.job.apt;
 import com.fastcampus.housebatch.adapter.ApartmentApiResource;
 import com.fastcampus.housebatch.core.dto.AptDealDto;
 import com.fastcampus.housebatch.core.repository.LawdRepository;
+import com.fastcampus.housebatch.core.service.AptDealService;
 import com.fastcampus.housebatch.job.validator.YearMonthParameterValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +18,6 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.xml.StaxEventItemReader;
 import org.springframework.batch.item.xml.builder.StaxEventItemReaderBuilder;
-import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,14 +37,13 @@ public class AptDealInsertJobConfig {
     @Bean
     public Job aptDealInsertJob(
             Step guLawdCdStep,
-            Step contextPrintStep
-//            Step aptDealInsertStep
+            Step aptDealInsertStep
     ) {
         return jobBuilderFactory.get("aptDealInsertJob")
                 .incrementer(new RunIdIncrementer())
                 .validator(new YearMonthParameterValidator())
                 .start(guLawdCdStep)
-                .on("CONTINUABLE").to(contextPrintStep).next(guLawdCdStep)
+                .on("CONTINUABLE").to(aptDealInsertStep).next(guLawdCdStep)
                 .from(guLawdCdStep)
                 .on("*").end()
                 .end()
@@ -63,28 +62,6 @@ public class AptDealInsertJobConfig {
     @Bean
     public Tasklet guLawdCdTasklet(LawdRepository lawdRepository) {
         return new GuLawdTasklet(lawdRepository);
-    }
-
-    @JobScope
-    @Bean
-    public Step contextPrintStep(Tasklet contextPrintTasklet) {
-        return stepBuilderFactory.get("contextPrintStep")
-                .tasklet(contextPrintTasklet)
-                .build();
-    }
-
-    // 별도의 Step 으로 분리되어 사용되어야 한다. - 상단의 JobScope 내에 현재 코드를 바로 넣어서 사용할 경우 jobExecutionContext의 값이 같은 값으로만 binding 된다.
-    // JobScope 메소드에서 Step 을 실행할 때마다 jobExecutionContext 의 값이 바뀌도록 하려면 현재와 같이 별도 분리 필요
-    @StepScope
-    @Bean
-    public Tasklet contextPrintTasklet(
-            @Value("#{jobExecutionContext['guLawdCd']}") String guLawdCd
-    ) {
-        return ((contribution, chunkContext) -> {
-            // executionContext 값을 출력
-            System.out.println("[contextPrintTasklet] guLawdCd : " + guLawdCd);
-            return RepeatStatus.FINISHED;
-        });
     }
 
     @JobScope
@@ -125,9 +102,9 @@ public class AptDealInsertJobConfig {
 
     @StepScope
     @Bean
-    public ItemWriter<AptDealDto> aptDealWriter() {
+    public ItemWriter<AptDealDto> aptDealWriter(AptDealService aptDealService) {
         return items -> {
-            items.forEach(System.out::println);
+            items.forEach(aptDealService::upsert);
             System.out.println("==================== Writing Completed =====================");     // 설정한 chunk 단위로 작업 수행 (10개 읽고 한번에 쓰여짐)
         };
     }

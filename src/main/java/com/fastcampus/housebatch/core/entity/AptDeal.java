@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-@RequiredArgsConstructor
 @AllArgsConstructor
 @Builder
 @Table(name = "apt_deal")
@@ -45,8 +44,9 @@ public class AptDeal {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public static AptDeal from(AptDealDto dto) {
+    public static AptDeal of(AptDealDto dto, Apt apt) {
         return AptDeal.builder()
+                .apt(apt)
                 .exclusiveArea(dto.getExclusiveArea())
                 .dealDate(dto.getDealDate())
                 .dealAmount(dto.getDealAmount())

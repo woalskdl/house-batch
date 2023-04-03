@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-@RequiredArgsConstructor
 @AllArgsConstructor
 @Builder
 @Table(name = "apt")
@@ -39,7 +38,7 @@ public class Apt {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public static Apt of(AptDealDto dto) {
+    public static Apt from(AptDealDto dto) {
         return Apt.builder()
                 .aptName(dto.getAptName().trim())
                 .jibun(dto.getJibun().trim())
