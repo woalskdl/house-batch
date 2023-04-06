@@ -1,5 +1,6 @@
 package com.fastcampus.housebatch.job.notify;
 
+import com.fastcampus.housebatch.adapter.FakeSendService;
 import com.fastcampus.housebatch.core.dto.AptDto;
 import com.fastcampus.housebatch.core.dto.NotificationDto;
 import com.fastcampus.housebatch.core.entity.AptNotification;
@@ -101,8 +102,8 @@ public class AptNotificationJobConfig {
 
     @StepScope
     @Bean
-    public ItemWriter<NotificationDto> aptNotificationWriter() {
-        return items -> items.forEach(item -> System.out.println(item.toMessage()));
+    public ItemWriter<NotificationDto> aptNotificationWriter(FakeSendService fakeSendService) {
+        return items -> items.forEach(item -> fakeSendService.send(item.getEmail(), item.toMessage()));
     }
 
 }
