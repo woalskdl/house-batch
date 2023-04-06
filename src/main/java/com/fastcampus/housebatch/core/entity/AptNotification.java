@@ -21,7 +21,7 @@ public class AptNotification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long aptNoticiationId;
+    private Long aptNotificationId;
 
     @Column(nullable = false)
     private String email;
