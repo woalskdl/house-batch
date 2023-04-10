@@ -27,7 +27,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
