@@ -64,9 +64,14 @@ class AptNotificationJobConfigTest {
     public void success() throws Exception {
         // Given
         LocalDate dealDate = LocalDate.now().minusDays(1);
-        givenAptNotification();
-        givenLawdCd();
-        givenApttDeal();
+        String email = "abc@gmail.com";
+        String anotherEmail = "efg@gmail.com";
+        String guLawdCd = "11110";
+
+        givenAptNotification(guLawdCd, email,  true);
+        givenAptNotification(guLawdCd, anotherEmail, false);
+        givenLawdCd(guLawdCd);
+        givenAptDeal(guLawdCd, dealDate);
 
         // When
         JobExecution jobExecution = jobLauncherTestUtils.launchJob(
@@ -75,39 +80,42 @@ class AptNotificationJobConfigTest {
 
         // Then
         assertEquals(jobExecution.getExitStatus(), ExitStatus.COMPLETED);
-        verify(fakeSendService, times(1)).send(anyString(), anyString());
-
+        verify(fakeSendService, times(1)).send(eq(email), anyString());
+        verify(fakeSendService, never()).send(eq(anotherEmail), any());
     }
 
-    private void givenApttDeal() {
-        when(aptDealService.findByGuLawdCdAndDealDate("11110", LocalDate.now().minusDays(1)))
-                .thenReturn(Arrays.asList(
-                        new AptDto("IT 아파트", 2000000000L),
-                        new AptDto("한 아파트", 1500000000L)
-                ));
+    private void givenAptNotification(String guLawdCd, String email, boolean enabled) {
+        aptNotificationRepository.save(
+                AptNotification.builder()
+                        .email(email)
+                        .guLawdCd(guLawdCd)
+                        .enabled(enabled)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build()
+        );
     }
 
-    private void givenAptNotification() {
-        AptNotification notification = new AptNotification();
-        notification.setEmail("abc@gmail.com");
-        notification.setGuLawdCd("11110");
-        notification.setEnabled(true);
-        notification.setCreatedAt(LocalDateTime.now());
-        notification.setUpdatedAt(LocalDateTime.now());
-        aptNotificationRepository.save(notification);
-    }
-
-    private void givenLawdCd() {
-        when(lawdRepository.findByLawdCd("1111000000"))
+    private void givenLawdCd(String guLawdCd) {
+        String lawdCd = guLawdCd + "00000";
+        when(lawdRepository.findByLawdCd(lawdCd))
                 .thenReturn(
                         Optional.of(Lawd.builder()
-                        .lawdCd("1111000000")
+                        .lawdCd(lawdCd)
                         .lawdDong("경기도 성남시 분당구")
                         .exist(true)
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
                         .build())
                 );
+    }
+
+    private void givenAptDeal(String guLawdCd, LocalDate dealDate) {
+        when(aptDealService.findByGuLawdCdAndDealDate(guLawdCd, dealDate))
+                .thenReturn(Arrays.asList(
+                        new AptDto("IT 아파트", 2000000000L),
+                        new AptDto("한 아파트", 1500000000L)
+                ));
     }
 
 }
